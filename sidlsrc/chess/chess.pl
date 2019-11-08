@@ -25,8 +25,7 @@ man(bishop, [c, f], 1).
 man(queen, [d], 1).
 man(king, [e], 1).
 man(pawn, Xs, 2):-	xaxis(Xs).
-promote(Color, Y, Man):- opposite(Color, Opp), row(Opp, Y, 1),
-    forpromotion(HMs), member(Man, HMs).
+promote(Color, Y, Man):- opposite(Color, Opp), row(Opp, Y, 1), forpromotion(HMs), member(Man, HMs).
 
 /* ############# INIT ######################*/
 /* men */
