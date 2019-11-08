@@ -1,0 +1,175 @@
+name(chess).
+/* General definitions */
+opposite(white, black).
+opposite(black, white).
+xaxis([a,b,c,d,e,f,g,h]).
+direction(white, 1).
+direction(black, -1).
+forpromotion([queen, knight, rook, bishop]).
+directions(rook, [[1, 0], [0, 1], [-1, 0], [0, -1]]).
+directions(bishop, [[1, 1], [1, -1], [-1, 1], [-1, -1]]).
+directions(queen, A):- directions(rook, R), directions(bishop, B), append(R, B, A).
+position(knight, X, Y):- member(X, [-2, 2]), member(Y, [-1, 1]).
+position(knight, X, Y):- member(Y, [-2, 2]), member(X, [-1, 1]). 
+position(king, X, Y):- directions(queen, A), member([X, Y], A).
+xvalue(Pre, Next, Inc):- xaxis(Xs), nth1(I, Xs, Pre), II is I + Inc, nth1(II, Xs, Next).
+yvalue(Y):- integer(Y), Y < 9, Y > 0.
+yvalue(Pre, Next, Inc):- Next is Pre + Inc, yvalue(Next).    
+row(white, 1, 1).
+row(white, 2, 2).
+row(black, 8, 1).
+row(black, 7, 2).
+man(rook, [a, h], 1).
+man(knight, [b, g], 1).
+man(bishop, [c, f], 1).
+man(queen, [d], 1).
+man(king, [e], 1).
+man(pawn, Xs, 2):-	xaxis(Xs).
+promote(Color, Y, Man):- opposite(Color, Opp), row(Opp, Y, 1),
+    forpromotion(HMs), member(Man, HMs).
+
+/* ############# INIT ######################*/
+/* men */
+init([Color, Man, X, Y]):- row(Color, Y, Row), man(Man, Xs, Row),
+  member(X, Xs).
+/* turn */
+init([white]).
+/* castling possible */    
+init([white, fortifiable]).
+init([black, fortifiable]).
+/* player's accounts  */
+init([white], 0.0).
+init([black], 0.0).
+
+/* ############# Switches and Actions ######*/
+legal([C]):- fact([C, king, _, _]), player([C]), fact([C]).
+/* control line */
+contrline(_, X, _, [DX, _], []) :- not(xvalue(X, _, DX)).
+contrline(_, _, Y, [_, DY], []) :- not(yvalue(Y, _, DY)).
+contrline(Color, X, Y, [DX, DY], []) :-  
+  xvalue(X, X1, DX), yvalue(Y, Y1, DY), fact([Color, _, X1, Y1]).    
+contrline(Color, X, Y, [DX, DY], [[X1, Y1]]):-
+  xvalue(X, X1, DX), yvalue(Y, Y1, DY),
+  opposite(Color, Opp), fact([Opp, _, X1, Y1]).    
+contrline(Color, X, Y, [DX, DY], [[X1, Y1] | Line]):-
+  xvalue(X, X1, DX), yvalue(Y, Y1, DY),
+  not(fact([_, _, X1, Y1])),
+  contrline(Color, X1, Y1, [DX, DY], Line).  
+/* pawn */
+controlled(Color, pawn, X, Y, X1, Y1):-
+  fact([Color, pawn, X, Y]),
+  direction(Color, I),
+  yvalue(Y, Y1, I), member(D, [1, -1]), xvalue(X, X1, D).
+/* rook, bishop, queen */
+controlled(Color, Man, X, Y, X1, Y1):-
+  directions(Man, Ds),
+  fact([Color, Man, X, Y]),
+  member(D, Ds),
+  contrline(Color, X, Y, D, NP),
+  member([X1, Y1], NP).
+/* knight, king */
+controlled(Color, Man, X, Y, X1, Y1):-
+  position(Man, DX, DY),
+  fact([Color, Man, X, Y]),
+  xvalue(X, X1, DX), yvalue(Y, Y1, DY), 
+  not(fact([Color, _, X1, Y1])).
+/* pawn - move forward, two steps */    
+switch([Color], [Color, pawn, X, Y, X, Y2]):-
+  fact([Color, pawn, X, Y]), row(Color, Y, 2),
+  direction(Color, I),
+  yvalue(Y, Y2, I * 2), yvalue(Y, Y1, I),
+  not(fact([_, _, X, Y1])),
+  not(fact([_, _, X, Y2])).
+/* pawn, move forward, one step */
+switch([Color], [Color, pawn, X, Y, X, Y1]):-
+  fact([Color, pawn, X, Y]),
+  direction(Color, I), yvalue(Y, Y1, I),
+  not(promote(Color, Y1, _)),
+  not(fact([_, _, X, Y1])).
+/* pawn, move forward, promote */
+switch([Color], [Color, pawn, X, Y, X, Y1, Man]):-
+  fact([Color, pawn, X, Y]),
+  direction(Color, I), yvalue(Y, Y1, I),
+  promote(Color, Y1, Man),
+  not(fact([_, _, X, Y1])).
+/* pawn, move diagonal, promote  */
+switch([Color], [Color, pawn, X, Y, X1, Y1, Man]):-
+  controlled(Color, pawn, X, Y, X1, Y1),
+  opposite(Color, Opp), fact([Opp, _, X1, Y1]),
+  promote(Color, Y1, Man).
+/* pawn, move diagonal*/
+switch([Color], [Color, pawn, X, Y, X1, Y1]):-
+  controlled(Color, pawn, X, Y, X1, Y1),
+  opposite(Color, Opp), fact([Opp, _, X1, Y1]),
+  not(promote(Color, Y1, _)).
+/* move rook, bishop, queen or knight */    
+switch([Color], [Color, Man, X, Y, X1, Y1]):-
+  controlled(Color, Man, X, Y, X1, Y1),
+  not(Man = pawn), not(Man = king).
+/* king */
+switch([Color], [Color, king, X, Y, X1, Y1]):-
+  controlled(Color, king, X, Y, X1, Y1),
+  opposite(Color, Opp),
+  not(controlled(Opp, _, _, _, X1, Y1)).
+/* castle */
+switch([Color], [Color, castle, right, Y]):-
+  fact([Color, fortifiable]),
+  fact([Color, rook, h, 1]), 
+  row(Color, Y, 1), not(fact([_, _, f, Y])),
+  not(fact([_, _, g, Y])), opposite(Color, Opp),
+  not(controlled(Opp, _, _, _, f, Y)),
+  not(controlled(Opp, _, _, _, g, Y)).
+switch([Color], [Color, castle, left, Y]):-
+  fact([Color, fortifiable]),
+  fact([Color, rook, a, 1]), row(Color, Y, 1),
+  not(fact([_, _, b, Y])), not(fact([_, _, c, Y])),
+  not(fact([_, _, d, Y])), opposite(Color, Opp),
+  not(controlled(Opp, _, _, _, c, Y)),
+  not(controlled(Opp, _, _, _, d, Y)).
+    
+/* ############ Owned ###################### */
+owned(C, C):- player(C).
+
+/* ############ Do ######################### */
+/* internals */
+changeturn(Color):- opposite(Color, Opp), delete([Color]),
+  create([Opp]).
+nocastle(Color, Man, X, Y):- opposite(Color, Opp),
+  fact([Opp, king, XK, YK]), controlled(Color, Man, X, Y, XK, YK),
+  delete([Opp, fortifiable]).
+nocastle(Color, _, X, Y):- opposite(Color, Opp),
+  fact([Opp, king, X, Y]), 
+  delete([Color, fortifiable]).
+nocastle(Color, king, _, _):-
+  delete([Color, fortifiable]).
+nocastle(_, _, _, _).
+/* take */
+do([Color, Man, X, Y, NX, NY]):- fact([C, M, NX, NY]),
+  changeturn(Color), nocastle(Color, Man, NX, NY),
+  delete([C, M, NX, NY]), delete([Color, Man, X, Y]), 
+  create([Color, Man, NX, NY]).
+/* move */
+do([Color, Man, X, Y, NX, NY]):- changeturn(Color),
+  delete([Color, Man, X, Y]), nocastle(Color, Man, NX, NY),
+  create([Color, Man, NX, NY]).
+/* promote */
+do([Color, Man, X, Y, NX, NY, New]):- changeturn(Color),
+  delete([Color, Man, X, Y]), nocastle(Color, Man, NX, NY),
+  create([Color, New, NX, NY]).
+/* castle */
+do([Color, castle, right, Y]):- changeturn(Color),
+  delete([Color, king, e, Y]),
+  delete([Color, rook, h, Y]), 
+  delete([Color, fortifiable]),
+  create([Color, king, g, Y]),
+  create([Color, rook, f, Y]).
+do([Color, castle, left, Y]):- changeturn(Color),
+  delete([Color, king, e, Y]),
+  delete([Color, rook, a, Y]), 
+  delete([Color, fortifiable]),
+  create([Color, king, d, Y]),
+  create([Color, rook, c, Y]).
+/* ######################### Payoffs ##################### */
+payoff([Color], 1.0):- opposite(Color, Opp), todelete([Opp, king, _, _]).
+payoff([Color], -1.0):- todelete([Color, king, _, _]).
+	

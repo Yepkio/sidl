@@ -1,0 +1,91 @@
+name(test).
+/*	predefinitions                                                           */
+
+balls([red,blue,orange,green]).
+
+/*	Definitions of facts in the initial state 
+	init(-Fact)                   fact(Fact) is true in the initial state     */
+
+init([F, S]):-
+	balls(Bs),
+	member(F, Bs),
+	member(S, Bs).
+	
+/*	Definitions of players' accounts in the initial state 
+	init(-Player, -Amount)                                                     */	
+	
+init([B], M):-
+	balls(Bs),
+	nth0(I, Bs, B),
+	M is I*0.7.
+
+/*	Definitions of hidden facts 
+	hidden(+Fact, -Player)         Fact is hidden for Player                   */
+
+hidden([B,A], [A]):-
+	not(B=A).
+
+/* 	Definitions of the legal switches.
+   	Switches must be instanciated 
+   	legal(-A)  */
+
+legal([A]):-
+    player([A]),
+    not(not(fact(_))).
+	
+legal([new]):-
+	findall(X, fact(X), Xs),
+	length(Xs, L),
+	not(L = 0).                
+
+/*  Definitions of actions in the switches
+	switch(+ID, -Action)           Action is the set of ID                     */
+switch([A], [A | F]):-
+    player([A]),
+    fact(F).
+	
+switch([new], [new, F, S]):-
+	balls(Bs),
+	member(F, Bs),
+	member(S, Bs).
+
+/* 	Definitions of switches' owners 
+	owned(+ID, -Owner)             Owner can be a distribution                 */
+
+owned([A], [A]):-
+	player([A]).  
+
+owned([new], equal(16)).
+
+/* owned([new], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).*/
+
+/*  Definitions of default actions in the owned switches                       
+	default(+ID, -Action)          Action is default for ID                    */
+
+default(A, Act):-
+    player(A),
+	switch(A, Act).
+
+/*	Definitions of
+    do(+Z) */
+
+do([A | F ]):-
+    player([A]),
+	fact(F),
+	delete(F).
+	
+do([new, F, S]):-
+	create([F, S]).
+	
+/* 	Definitions of payoff 
+    first argument must not be instanciated
+    payoff(+A, -P)  */
+
+payoff([Z], 1.0):-
+	todelete([X, Y]),
+	not(X = Z),
+	not(Y = Z).
+	
+	
+	
+	
