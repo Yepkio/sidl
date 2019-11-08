@@ -26,10 +26,8 @@
 	<target name="clean" description="clean up">
 		<!-- Clean up -->
 		<delete dir="${build}" />
-		<delete dir="${dist}" />
 		<!-- Create the build and dist directories -->
 		<mkdir dir="${build}" />
-		<mkdir dir="${dist}" />
 	</target>
 	
 	<target name="compile" description="compile the source code">
