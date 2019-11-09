@@ -1,9 +1,6 @@
 ################################################################
 # Setup the environment for compiling and running the demos on
-# Unix like platforms.  This script is sourced from the run.sh
-# scripts in the various example directories.
-#
-# You may need to edit this before running the demos
+# Unix like platforms. 
 #
 # Required setup
 #
@@ -72,14 +69,11 @@ if [ -z "$JPLJAR" ]; then
   fi
 fi
 
-
 if [ -z "$SIDLJAR" ]; then
-  if [ -d "build" ]; then
-    SIDLJAR="build"
-  else
-    echo "ERROR: Cannot find build folder "
-    exit 1
+  if [! -d "build" ]; then
+    mkdir build
   fi
+  SIDLJAR="build"
 fi
 
 JPL_LIBRARY_PATH="$PLLIBDIR"
@@ -109,21 +103,20 @@ echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH CLASSPATH
 
 ################################################################
-# compile Class
+# compile library
 #
-# Compile the indicated class if necessary
+#
 ################################################################
 
 compile()
-{ if [ ! -f $1.class ]; then
-    echo "Compiling $1"
-    javac $1.java
-  elif [ $1.java -nt $1.class ]; then
-    echo "Recompiling $1"
-    javac $1.java
-  fi
+{ 
+  echo "Compiling $1"
+  rm -rf build
+  mkdir build
+  javac -d build -classpath $JPLJAR -sourcepath javasrc/ javasrc/*/*/*.java
+  cp javasrc/sidl/core/sidl.pl build/sidl/core/sidl.pl
+  cp javasrc/sidl/utils/helpful.pl build/sidl/utils/helpful.pl
 }
-
 
 ################################################################
 # run Class
@@ -137,40 +130,13 @@ compile()
 
 run()
 { compile $1
-
   if [ "$JPL_COMPILE_ONLY" != "yes" ]; then
     echo ""
-    echo "JPL demo: $1"
+    echo "SIDL demo: $1"
     echo ""
 
     java -Djava.library.path=$JPL_LIBRARY_PATH $*
   fi
 }
 
-################################################################
-# run_preloaded Class
-#
-# As run Class, but preloads libjpl.so to be able to use foreign
-# extensions to Prolog.  See the SemWeb example
-#
-# This isn't needed for installations using SWI-Prolog through
-# the libpl.$PLSOEXT shared object.  For the moment this is only
-# MacOS, which ignores LD_PRELOAD, so we'll ignore this issue for
-# the moment
-################################################################
 
-run_preloaded()
-{ compile $1
-
-  if [ "$JPL_COMPILE_ONLY" != "yes" ]; then
-    JPLSO="$PLBASE/lib/$PLARCH/libjpl.$PLSOEXT"
-
-    echo ""
-    echo "JPL demo: $1"
-    echo "Using preloaded $JPLSO"
-    echo ""
-
-
-    env LD_PRELOAD=$JPLSO java -Djava.library.path=$PLLIBDIR $1
-  fi
-}
