@@ -15,17 +15,32 @@ public class Base {
 
 	public final static String SRC01 = "sidl.pl", SRC02 = "helpful.pl";
 
-	public final static String PLAYER = "player", GAME = "game",
-			OWNED = "owned", FACT = "fact", EQUAL = "equal", DOES = "does",
-			NAME = "name";
+	public final static String 
+	        PLAYER = "player", 
+	        GAME = "game",
+			OWNED = "owned", 
+			FACT = "fact", 
+			EQUAL = "equal", 
+			DOES = "does",
+			NAME = "name", 
+			UNLIMITED = "unlimited";
 			
-	public final static String	INIT = "sidl_init", ACCOUNT = "sidl_account",
-			TERMINAL = "sidl_terminal", NATURE = "sidl_nature",
-			TOGGLE = "sidl_toggle", TOGGLEP = "sidl_toggleP",
-			PREPARE = "sidl_prepare", COMPLETE = "sidl_complete",
-			DONE = "sidl_done", SUBMIT = "sidl_submit", CLEAN = "sidl_clean",
-			LEGALS = "sidl_legals", REVEAL = "sidl_reveal",
-			CHRONON = "sidl_chronon";
+	public final static String	
+	        INIT = "sidl_init", 
+	        ACCOUNT = "sidl_account",
+			TERMINAL = "sidl_terminal", 
+			NATURE = "sidl_nature",
+			TOGGLE = "sidl_toggle", 
+			TOGGLEP = "sidl_toggleP",
+			PREPARE = "sidl_prepare", 
+			COMPLETE = "sidl_complete",
+			DONE = "sidl_done", 
+			SUBMIT = "sidl_submit", 
+			CLEAN = "sidl_clean",
+			LEGALS = "sidl_legals", 
+			REVEAL = "sidl_reveal",
+			CHRONON = "sidl_chronon",
+			LEGALSTRUCTURES = "sidl_legalstructures";
 
 	public final static String[] args = new String[] { "swipl", "-q", "-g", "true", "--nosignals" };
 

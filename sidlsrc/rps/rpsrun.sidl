@@ -28,7 +28,9 @@ gametype(6, [banana, hunter, monkey, paper, mosquito], banana, 3).
 gametype(7, [scissors, water, rock, monkey, paper, fire], scissors, 2).
 
 nextgame(X, Y):-
-    gametype(N, X, _, _), NPP is N + 1, gametype(NPP, Y, _, _).
+    gametype(N, X, _, _), 
+    NPP is N + 1, 
+    gametype(NPP, Y, _, _).
     
 gesture(P, G):-
     not(does([P], _)),
@@ -175,3 +177,4 @@ payoff([P], 0.0):-
 	opponent(P, O),
 	gesture(O, G2),
 	not(beats(G1, G2)).	
+	

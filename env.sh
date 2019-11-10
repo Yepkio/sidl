@@ -70,7 +70,7 @@ if [ -z "$JPLJAR" ]; then
 fi
 
 if [ -z "$SIDLJAR" ]; then
-  if [! -d "build" ]; then
+  if [ ! -d "build" ]; then
     mkdir build
   fi
   SIDLJAR="build"

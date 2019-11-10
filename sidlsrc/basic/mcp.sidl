@@ -74,3 +74,4 @@ payoff([C], 100.0):-
 payoff([C], -10000.0):-
 	tocreate([C, stepped]),
 	not(fact([dirty , C])).	
+	

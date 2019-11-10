@@ -5,6 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import org.jpl7.Atom;
+import org.jpl7.Compound;
+import org.jpl7.JPL;
+import org.jpl7.fli.Prolog;
 import org.jpl7.Query;
 import org.jpl7.Term;
 import org.jpl7.Variable;
@@ -37,7 +41,7 @@ public class SIDL extends Base {
 	private String[] players = null;
 
 	/**
-	 * @return the agents
+	 * @return the players
 	 */
 	public final String[] getPlayers() {
 		return players;
@@ -74,7 +78,7 @@ public class SIDL extends Base {
 	 * @return 
 	 * @return
 	 */
-	private void plCheckAgents() throws SIDLException {
+	private void plCheckplayers() throws SIDLException {
 		Variable R = new Variable("R");
 		Query query = new Query(PLAYER, R);
 		if (!query.hasSolution())
@@ -92,7 +96,7 @@ public class SIDL extends Base {
 		this.rules = JHPL.fileString(game);
 		consult(game);
 		pl(Base.INIT);
-		plCheckAgents();
+		plCheckplayers();
 		this.name = this.plName();
 	}
 
@@ -119,31 +123,34 @@ public class SIDL extends Base {
 	}
 
 	/**
-	 * @param players
+	 * Get facts visible for a player
+	 * @param player 
 	 * @return
 	 */
-	public synchronized String[][] plFacts(String agent) {
+	public synchronized String[][] plFacts(String player) {
 		Variable X = new Variable("X");
-		Query query = new Query(REVEAL, new Term[]{X, JHPL.a2l(PP.likepl(agent))});
+		Query query = new Query(REVEAL, new Term[]{X, JHPL.mixedArrayToList(PP.likepl(player))});
 		if (!query.hasSolution())
 			return new String[0][0];
 		return JHPL.qf(query, "X");
 	}
 
 	/**
-	 * @param players
+	 * Get changes visible for a player
+	 * @param player
 	 * @return
 	 */
-	public synchronized String[][] plChanges(String agent) {
+	public synchronized String[][] plChanges(String player) {
 		Variable X = new Variable("X");
 		Variable C = new Variable("C");
-		Query query = new Query(REVEAL, new Term[]{X, JHPL.a2l(PP.likepl(agent)), C});
+		Query query = new Query(REVEAL, new Term[]{X, JHPL.mixedArrayToList(PP.likepl(player)), C});
 		if (!query.hasSolution())
 			return new String[0][0];
 		return JHPL.qf(query, "X", "C");
 	}
 
 	/**
+	 * get players' accounts
 	 * @return
 	 */
 	public synchronized Map<String[], Double> plAccounts() {
@@ -165,26 +172,39 @@ public class SIDL extends Base {
 	public synchronized SIDLLegals plOwnedLegals() {
 		Map<String[], String[][]> acts = new HashMap<String[], String[][]>();
 		Map<String[], String[]> owns = new HashMap<String[], String[]>();
+		Map<String[], Term> unlimitedStructures = new HashMap<String[], Term>();
 		Variable P  = new Variable("P");
 		Variable ID = new Variable("ID");
 		Variable As = new Variable("As");
 		Query query = new Query(LEGALS, new Term[]{P, ID, As});
-		if (!query.hasSolution())
-			return new SIDLLegals(acts, owns);
-		Map<String,Term>[] hta = query.allSolutions();
-		for (Map<String,Term> ht : hta) {
-			String[] id = JHPL.l2a(ht.get("ID"));
-			acts.put(id, JHPL.l2aa(ht.get("As")));
-			owns.put(id, JHPL.l2a(ht.get("P")));
+		if (query.hasSolution())
+		{
+			Map<String,Term>[] hta = query.allSolutions();
+			for (Map<String,Term> ht : hta) {
+				String[] id = JHPL.l2a(ht.get("ID"));
+				acts.put(id, JHPL.l2aa(ht.get("As")));
+				owns.put(id, JHPL.l2a(ht.get("P")));
+			}
 		}
-		return new SIDLLegals(acts, owns);
+		query = new Query(LEGALSTRUCTURES, new Term[]{P, ID, As});
+		if (query.hasSolution())
+		{	
+			Map<String,Term>[] hta = query.allSolutions();
+			for (Map<String,Term> ht : hta) {
+				String[] id = JHPL.l2a(ht.get("ID"));
+				acts.put(id, JHPL.l2aa(ht.get("As")));
+				owns.put(id, JHPL.l2a(ht.get("P")));
+				unlimitedStructures.put(id,ht.get("As"));
+			}
+		}
+		return new SIDLLegals(acts, owns, unlimitedStructures);
 	}
 
 	/**
 	 * @return
 	 */
-	public synchronized HashMap<String[], String[][]> plLegals() {
-		HashMap<String[], String[][]> r = new HashMap<String[], String[][]>();
+	public synchronized Map<String[], String[][]> plLegals() {
+		Map<String[], String[][]> r = new HashMap<String[], String[][]>();
 		Variable ID = new Variable("ID");
 		Variable As = new Variable("As");
 		Query query = new Query(LEGALS, new Term[]{ID, As});
@@ -196,8 +216,8 @@ public class SIDL extends Base {
 		return r;
 	}
 	
-	public synchronized HashMap<String, String> plDo(String dop) {
-		HashMap<String, String> r = new HashMap<String, String>();
+	public synchronized Map<String, String> plDo(String dop) {
+		Map<String, String> r = new HashMap<String, String>();
 		Variable X = new Variable("X"), A = new Variable("A");
 		Query query = new Query(dop, new Term[]{X, A});
 		if (!query.hasSolution())
@@ -225,9 +245,15 @@ public class SIDL extends Base {
 		return true;
 	}
 
-	public synchronized boolean plSubmitAction(String p, String id, String a) {		
-		return (new Query(SUBMIT, new Term[]{JHPL.a2l(PP.likepl(p)), JHPL.a2l(PP
-				.likepl(id)), JHPL.a2l(PP.likepl(a))})).hasSolution();
+	public synchronized boolean plSubmitAction(String player, String id, String action) {	
+		Term[] args = 
+			{
+				JHPL.mixedArrayToList(PP.likepl(player)), 
+				JHPL.mixedArrayToList(PP.likepl(id)), 
+				JHPL.mixedArrayToList(PP.likepl(action))
+			};
+	    
+		return new Query(SUBMIT, args).hasSolution();
 	}
 	
 	public void makeOneChronon() {

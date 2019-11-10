@@ -1,0 +1,48 @@
+bidders([alice,bob,clara,david]).
+
+name(priceAuction).
+init([startprice, 10.0]).
+init([A], 0.0):-
+	bidders(Rs),
+    member(A,Rs).
+
+legal(R):- 
+    player(R).    
+
+unlimited(R, [wait]):- 
+    player(R).
+unlimited([A], [A, (price,double)]):- 
+    player([A]).      
+
+leadingprice(B):-
+    not(fact([bid,_,_])),
+    fact([startprice,B]).
+    
+leadingprice(B):-
+    fact([bid,_,B]),
+    findall(P, fact([bid,_,P]),Ps),
+    maxmember(Ps,B).    
+
+owned(R, R):- 
+    player(R).     
+    
+switch([A], [A, T]):-
+    player([A]),                
+    leadingprice(B),
+    T > B.   
+  
+switch(R, [wait]):- 
+    player(R).
+
+default(R, [wait]):-
+    player(R).
+
+do([wait]).                
+                               
+do([A, P]):- 
+    create([bid, A, P]).
+  
+payoff(R, 0.0):- 
+    player(R).
+    
+

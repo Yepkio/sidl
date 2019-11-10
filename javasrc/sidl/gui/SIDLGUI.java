@@ -37,8 +37,8 @@ public class SIDLGUI extends JFrame implements ActionListener {
 	JButton load = new JButton("Load File"), next = new JButton("Next State");
 
 	JTextArea stateTextarea = new JTextArea(0, 0),
-			switchesTextarea = new JTextArea(0, 0), accounts = new JTextArea(0,
-					0);
+			switchesTextarea = new JTextArea(0, 0), 
+			accounts = new JTextArea(0,0);
 
 	/** can be added to the window */
 	JScrollPane statescroller = new JScrollPane(),
@@ -47,7 +47,7 @@ public class SIDLGUI extends JFrame implements ActionListener {
 
 	SIDLSubmitPanel sbp = null;
 
-	SIDL sidl2 = null;
+	SIDL sidl = null;
 
 	public static void main(String[] args) {
 		List<String> l = Arrays.asList(args);
@@ -70,20 +70,16 @@ public class SIDLGUI extends JFrame implements ActionListener {
 		doJTextArea(this.switchesTextarea);
 		doJTextArea(this.accounts);
 
-		statescroller
-				.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		statescroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		statescroller.getViewport().add(stateTextarea);
 
-		switchesscroller
-				.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		switchesscroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		switchesscroller.getViewport().add(switchesTextarea);
 
-		accountsscroller
-				.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		accountsscroller.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		accountsscroller.getViewport().add(accounts);
 
-		JSplitPane sp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-				statescroller, switchesscroller);
+		JSplitPane sp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,	statescroller, switchesscroller);
 
 		sp.setDividerLocation(260);
 		sp.setContinuousLayout(true);
@@ -109,20 +105,19 @@ public class SIDLGUI extends JFrame implements ActionListener {
 	}
 
 	public synchronized void updateGUI() {
-		if (sidl2.pl(Base.TERMINAL)) {
+		if (sidl.pl(Base.TERMINAL)) {
 			next.setEnabled(false);
 			sbp.setEnabled(false);
 		} else {
-			SIDLLegals legals = sidl2.plOwnedLegals();
+			SIDLLegals legals = sidl.plOwnedLegals();
 			sbp.updateGUI(legals);
-			switchesTextarea.setText(JHPL.ls2s(sidl2.plLegals(), 3));
 		}
 
-		stateTextarea.setText("Global Facts:\n" + PP.pllike(sidl2.plFacts(), 2));
-		for (String a : sidl2.getPlayers())
-			stateTextarea.append("\n\nFacts for " + a + ":\n" + PP.pllike(sidl2.plFacts(a), 2));
+		stateTextarea.setText("Global Facts:\n" + PP.pllike(sidl.plFacts(), 2));
+		for (String a : sidl.getPlayers())
+			stateTextarea.append("\n\nFacts for " + a + ":\n" + PP.pllike(sidl.plFacts(a), 2));
 
-		Map<String[], Double> acs = sidl2.plAccounts();
+		Map<String[], Double> acs = sidl.plAccounts();
 		
 		this.accounts.setText("");
 		for (Entry<String[], Double> e : acs.entrySet())
@@ -145,7 +140,8 @@ public class SIDLGUI extends JFrame implements ActionListener {
 						.getCanonicalFile());
 				chooser.showOpenDialog(this);
 				this.filename = chooser.getSelectedFile().getCanonicalPath();
-				sidl2 = new SIDL(filename, new Random(System.currentTimeMillis()));
+				sidl = new SIDL(filename, new Random(System.currentTimeMillis()));
+				this.setTitle(sidl.plName());
 				load.setEnabled(false);
 				next.setEnabled(true);
 				sbp.setEnabled(true);
@@ -155,8 +151,8 @@ public class SIDLGUI extends JFrame implements ActionListener {
 				System.exit(0);
 			}
 		} else if (e.getSource() == next) {
-			if (!sidl2.pl(Base.TERMINAL)) {
-				sidl2.makeOneChronon();
+			if (!sidl.pl(Base.TERMINAL)) {
+				sidl.makeOneChronon();
 				this.updateGUI();
 			} else {
 				next.setEnabled(false);

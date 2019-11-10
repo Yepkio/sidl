@@ -1,4 +1,4 @@
-name(test).
+name(ballsgame).
 /*	predefinitions                                                           */
 
 balls([red,blue,orange,green]).

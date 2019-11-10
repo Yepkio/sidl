@@ -12,6 +12,12 @@ minmember([X | Xs], Z):-
     minmember(Xs, Y),
 	Z is min(X, Y).
 
+maxmember([], 0).
+maxmember([X], X).
+maxmember([X | Xs], Z):-
+    maxmember(Xs, Y),
+	Z is max(X, Y).	
+
 getsubset(0, [], []):-!.
 getsubset(1, [M], S):-
     member(M, S).
@@ -45,3 +51,4 @@ binomial(P, Q, R) :-
 	binomial(P1, Q, R1),
 	binomial(P1, Q1, R2),
 	R is R1 + R2.
+	

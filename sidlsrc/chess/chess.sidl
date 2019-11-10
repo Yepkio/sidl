@@ -36,7 +36,7 @@ init([white]).
 /* castling possible */    
 init([white, fortifiable]).
 init([black, fortifiable]).
-/* player's accounts  */
+/* accounts of players  */
 init([white], 0.0).
 init([black], 0.0).
 
