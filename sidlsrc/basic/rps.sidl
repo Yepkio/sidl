@@ -1,0 +1,97 @@
+name(rps).
+
+gestures([rock, paper, scissors]).
+beats(paper, rock).
+beats(rock, scissors).
+beats(scissors, paper).
+	
+opponent(role1, role2).
+opponent(role2, role1).
+
+giventime(3).
+givenrounds(10).
+
+gesture(P, G):-
+    not(does([P], _)),
+    fact([chosen, P, G]).
+gesture(P, G):-
+    does([P], [P, wait]),
+    fact([chosen, P, G]).
+gesture(P, G):-
+    does([P], [P, G]).
+    
+regesture(P, G):-
+    gesture(P, G).
+regesture(P, G):-
+    gesture(P, O),
+    not(G = O),
+    delete([chosen, P, O]),
+    create([chosen, P, G]).
+
+madegestures:-
+    gesture(role1, G1),
+    create([made, role1, G1]),
+    gesture(role2, G2),
+    create([made, role2, G2]).
+	
+init([gameon]).
+init([chosen, P, rock]):- opponent(P, _).
+init([rounds, 10]):- givenrounds(10).
+init([timer, X]):- giventime(X).
+init([P], 0.0):- opponent(P, _).
+    
+hidden([chosen, P, _], [O]):- opponent(P, O).
+	 
+legal([P]):- fact([gameon]), player([P]).
+legal([timer]):- fact([timer, X]), X > 0.
+legal([round]):- fact([timer, 0]), fact([gameon]).
+	
+switch([P], [P, wait]):- player([P]).
+switch([P], [P, G]):-
+    player([P]),
+    gestures(Gs),
+    member(G, Gs).
+switch([timer], [timer]).
+switch([round], [round]).
+	
+owned([P], [P]):- player([P]).
+owned([timer], equal(1)).
+owned([round], equal(1)).
+
+do([_, wait]).
+do([P, G]):-
+    player([P]),
+    fact([chosen, P, O]),
+    not(O = G), 
+    delete([chosen, P, O]),
+    create([chosen, P, G]).
+do([timer]):-
+    fact([timer, X]),
+    X > 0,
+    XMM is X - 1,
+    delete([timer, X]),
+    create([timer, XMM]).
+do([round]):-
+    fact([rounds, X]),
+    X > 1,
+    delete([timer, 0]),
+    delete([rounds, X]),
+    NX is X - 1,
+    create([rounds, NX]),
+    giventime(T),
+    create([timer, T]),
+    madegestures.	    
+do([round]):-
+    fact([rounds, 1]),
+    madegestures,
+    delete([gameon]).
+
+payoff([P], 1.0):-
+    does([round], [round]), 
+    gesture(P, G1),
+    opponent(P, O),
+    gesture(O, G2),
+    beats(G1, G2).
+payoff([P], 0.0):- opponent(P, _).
+
+	
