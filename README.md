@@ -1,5 +1,5 @@
 # sidl
-Strategic Interaction Description Language
+Strategic Interaction Definition Language
 
 ## For Linux
 
